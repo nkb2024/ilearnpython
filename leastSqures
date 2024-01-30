@@ -1,0 +1,32 @@
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import normalize
+import matplotlib.pyplot as plt
+from sklearn.datasets import load_boston
+from sklearn.model_selection import train_test_split
+
+X,y = load_boston(return_X_y=True)
+data= np.column_stack((X,y))
+print(data.shape)
+(506, 14)
+#Normalise data
+data = normalize(data, norm='l2')
+print(data[0,:])
+X= data[:,:13]
+y= data[:,13]
+y= np.reshape(y,(506))
+print(X.shape, y.shape)
+(506, 13)(506, 1)
+#Add bias
+X_b= np.column_stack((np.ones((506, 1)), X))
+#Split dta
+xTrain, xTest, yTrain, yTest = train_test_split(X_b, y, test_size=0.2,random_state=42)
+print(xTrain.shape, xTest.shape)
+(404.14)(102,14)
+A= np.linalg.inv((xTrain.T).dot(xTrain))
+B= (xTrain.T).dot(yTrain)
+m= A.dot(B)
+yPredTr= xTrain.dot(m)
+plt.figure(figsize=(16,8), dpi=80)
+plt.plot(yTrain, 'r--', yPredTr)
+plt.legend(['True Price', 'Predicted Price'], loc='upper left')

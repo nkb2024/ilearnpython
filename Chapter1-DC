@@ -1,0 +1,372 @@
+Chapter 1. Introduction
+“Data! Data! Data!” he cried impatiently. “I can’t make bricks without clay.”
+
+Arthur Conan Doyle
+
+The Ascendance of Data
+We live in a world that’s drowning in data. Websites track every user’s every click. Your smartphone is building up a record of your location and speed every second of every day. “Quantified selfers” wear pedometers-on-steroids that are always recording their heart rates, movement habits, diet, and sleep patterns. Smart cars collect driving habits, smart homes collect living habits, and smart marketers collect purchasing habits. The internet itself represents a huge graph of knowledge that contains (among other things) an enormous cross-referenced encyclopedia; domain-specific databases about movies, music, sports results, pinball machines, memes, and cocktails; and too many government statistics (some of them nearly true!) from too many governments to wrap your head around.
+
+Buried in these data are answers to countless questions that no one’s ever thought to ask. In this book, we’ll learn how to find them.
+
+What Is Data Science?
+There’s a joke that says a data scientist is someone who knows more statistics than a computer scientist and more computer science than a statistician. (I didn’t say it was a good joke.) In fact, some data scientists are—for all practical purposes—statisticians, while others are fairly indistinguishable from software engineers. Some are machine learning experts, while others couldn’t machine-learn their way out of kindergarten. Some are PhDs with impressive publication records, while others have never read an academic paper (shame on them, though). In short, pretty much no matter how you define data science, you’ll find practitioners for whom the definition is totally, absolutely wrong.
+
+Nonetheless, we won’t let that stop us from trying. We’ll say that a data scientist is someone who extracts insights from messy data. Today’s world is full of people trying to turn data into insight.
+
+For instance, the dating site OkCupid asks its members to answer thousands of questions in order to find the most appropriate matches for them. But it also analyzes these results to figure out innocuous-sounding questions you can ask someone to find out how likely someone is to sleep with you on the first date.
+
+Facebook asks you to list your hometown and your current location, ostensibly to make it easier for your friends to find and connect with you. But it also analyzes these locations to identify global migration patterns and where the fanbases of different football teams live.
+
+As a large retailer, Target tracks your purchases and interactions, both online and in-store. And it uses the data to predictively model which of its customers are pregnant, to better market baby-related purchases to them.
+
+In 2012, the Obama campaign employed dozens of data scientists who data-mined and experimented their way to identifying voters who needed extra attention, choosing optimal donor-specific fundraising appeals and programs, and focusing get-out-the-vote efforts where they were most likely to be useful. And in 2016 the Trump campaign tested a staggering variety of online ads and analyzed the data to find what worked and what didn’t.
+
+Now, before you start feeling too jaded: some data scientists also occasionally use their skills for good—using data to make government more effective, to help the homeless, and to improve public health. But it certainly won’t hurt your career if you like figuring out the best way to get people to click on advertisements.
+
+Motivating Hypothetical: DataSciencester
+Congratulations! You’ve just been hired to lead the data science efforts at DataSciencester, the social network for data scientists.
+
+NOTE
+When I wrote the first edition of this book, I thought that “a social network for data scientists” was a fun, silly hypothetical. Since then people have actually created social networks for data scientists, and have raised much more money from venture capitalists than I made from my book. Most likely there is a valuable lesson here about silly data science hypotheticals and/or book publishing.
+
+Despite being for data scientists, DataSciencester has never actually invested in building its own data science practice. (In fairness, DataSciencester has never really invested in building its product either.) That will be your job! Throughout the book, we’ll be learning about data science concepts by solving problems that you encounter at work. Sometimes we’ll look at data explicitly supplied by users, sometimes we’ll look at data generated through their interactions with the site, and sometimes we’ll even look at data from experiments that we’ll design.
+
+And because DataSciencester has a strong “not-invented-here” mentality, we’ll be building our own tools from scratch. At the end, you’ll have a pretty solid understanding of the fundamentals of data science. And you’ll be ready to apply your skills at a company with a less shaky premise, or to any other problems that happen to interest you.
+
+Welcome aboard, and good luck! (You’re allowed to wear jeans on Fridays, and the bathroom is down the hall on the right.)
+
+Finding Key Connectors
+It’s your first day on the job at DataSciencester, and the VP of Networking is full of questions about your users. Until now he’s had no one to ask, so he’s very excited to have you aboard.
+
+In particular, he wants you to identify who the “key connectors” are among data scientists. To this end, he gives you a dump of the entire DataSciencester network. (In real life, people don’t typically hand you the data you need. Chapter 9 is devoted to getting data.)
+
+What does this data dump look like? It consists of a list of users, each represented by a dict that contains that user’s id (which is a number) and name (which, in one of the great cosmic coincidences, rhymes with the user’s id):
+
+users = [
+    { "id": 0, "name": "Hero" },
+    { "id": 1, "name": "Dunn" },
+    { "id": 2, "name": "Sue" },
+    { "id": 3, "name": "Chi" },
+    { "id": 4, "name": "Thor" },
+    { "id": 5, "name": "Clive" },
+    { "id": 6, "name": "Hicks" },
+    { "id": 7, "name": "Devin" },
+    { "id": 8, "name": "Kate" },
+    { "id": 9, "name": "Klein" }
+]
+He also gives you the “friendship” data, represented as a list of pairs of IDs:
+
+friendship_pairs = [(0, 1), (0, 2), (1, 2), (1, 3), (2, 3), (3, 4),
+                    (4, 5), (5, 6), (5, 7), (6, 8), (7, 8), (8, 9)]
+For example, the tuple (0, 1) indicates that the data scientist with id 0 (Hero) and the data scientist with id 1 (Dunn) are friends. The network is illustrated in Figure 1-1.
+
+The DataSciencester network.
+Figure 1-1. The DataSciencester network
+Having friendships represented as a list of pairs is not the easiest way to work with them. To find all the friendships for user 1, you have to iterate over every pair looking for pairs containing 1. If you had a lot of pairs, this would take a long time.
+
+Instead, let’s create a dict where the keys are user ids and the values are lists of friend ids. (Looking things up in a dict is very fast.)
+
+NOTE
+Don’t get too hung up on the details of the code right now. In Chapter 2, I’ll take you through a crash course in Python. For now just try to get the general flavor of what we’re doing.
+
+We’ll still have to look at every pair to create the dict, but we only have to do that once, and we’ll get cheap lookups after that:
+
+# Initialize the dict with an empty list for each user id:
+friendships = {user["id"]: [] for user in users}
+
+# And loop over the friendship pairs to populate it:
+for i, j in friendship_pairs:
+    friendships[i].append(j)  # Add j as a friend of user i
+    friendships[j].append(i)  # Add i as a friend of user j
+Now that we have the friendships in a dict, we can easily ask questions of our graph, like “What’s the average number of connections?”
+
+First we find the total number of connections, by summing up the lengths of all the friends lists:
+
+def number_of_friends(user):
+    """How many friends does _user_ have?"""
+    user_id = user["id"]
+    friend_ids = friendships[user_id]
+    return len(friend_ids)
+
+total_connections = sum(number_of_friends(user)
+                        for user in users)        # 24
+And then we just divide by the number of users:
+
+num_users = len(users)                            # length of the users list
+avg_connections = total_connections / num_users   # 24 / 10 == 2.4
+It’s also easy to find the most connected people—they’re the people who have the largest numbers of friends.
+
+Since there aren’t very many users, we can simply sort them from “most friends” to “least friends”:
+
+# Create a list (user_id, number_of_friends).
+num_friends_by_id = [(user["id"], number_of_friends(user))
+                     for user in users]
+
+num_friends_by_id.sort(                                # Sort the list
+       key=lambda id_and_friends: id_and_friends[1],   # by num_friends
+       reverse=True)                                   # largest to smallest
+
+# Each pair is (user_id, num_friends):
+# [(1, 3), (2, 3), (3, 3), (5, 3), (8, 3),
+#  (0, 2), (4, 2), (6, 2), (7, 2), (9, 1)]
+One way to think of what we’ve done is as a way of identifying people who are somehow central to the network. In fact, what we’ve just computed is the network metric degree centrality (Figure 1-2).
+
+The DataSciencester network sized by degree.
+Figure 1-2. The DataSciencester network sized by degree
+This has the virtue of being pretty easy to calculate, but it doesn’t always give the results you’d want or expect. For example, in the DataSciencester network Thor (id 4) only has two connections, while Dunn (id 1) has three. Yet when we look at the network, it intuitively seems like Thor should be more central. In Chapter 22, we’ll investigate networks in more detail, and we’ll look at more complex notions of centrality that may or may not accord better with our intuition.
+
+Data Scientists You May Know
+While you’re still filling out new-hire paperwork, the VP of Fraternization comes by your desk. She wants to encourage more connections among your members, and she asks you to design a “Data Scientists You May Know” suggester.
+
+Your first instinct is to suggest that users might know the friends of their friends. So you write some code to iterate over their friends and collect the friends’ friends:
+
+def foaf_ids_bad(user):
+    """foaf is short for "friend of a friend" """
+    return [foaf_id
+            for friend_id in friendships[user["id"]]
+            for foaf_id in friendships[friend_id]]
+When we call this on users[0] (Hero), it produces:
+
+[0, 2, 3, 0, 1, 3]
+It includes user 0 twice, since Hero is indeed friends with both of his friends. It includes users 1 and 2, although they are both friends with Hero already. And it includes user 3 twice, as Chi is reachable through two different friends:
+
+print(friendships[0])  # [1, 2]
+print(friendships[1])  # [0, 2, 3]
+print(friendships[2])  # [0, 1, 3]
+Knowing that people are friends of friends in multiple ways seems like interesting information, so maybe instead we should produce a count of mutual friends. And we should probably exclude people already known to the user:
+
+from collections import Counter                   # not loaded by default
+
+def friends_of_friends(user):
+    user_id = user["id"]
+    return Counter(
+        foaf_id
+        for friend_id in friendships[user_id]     # For each of my friends,
+        for foaf_id in friendships[friend_id]     # find their friends
+        if foaf_id != user_id                     # who aren't me
+        and foaf_id not in friendships[user_id]   # and aren't my friends.
+    )
+
+
+print(friends_of_friends(users[3]))               # Counter({0: 2, 5: 1})
+This correctly tells Chi (id 3) that she has two mutual friends with Hero (id 0) but only one mutual friend with Clive (id 5).
+
+As a data scientist, you know that you also might enjoy meeting users with similar interests. (This is a good example of the “substantive expertise” aspect of data science.) After asking around, you manage to get your hands on this data, as a list of pairs (user_id, interest):
+
+interests = [
+    (0, "Hadoop"), (0, "Big Data"), (0, "HBase"), (0, "Java"),
+    (0, "Spark"), (0, "Storm"), (0, "Cassandra"),
+    (1, "NoSQL"), (1, "MongoDB"), (1, "Cassandra"), (1, "HBase"),
+    (1, "Postgres"), (2, "Python"), (2, "scikit-learn"), (2, "scipy"),
+    (2, "numpy"), (2, "statsmodels"), (2, "pandas"), (3, "R"), (3, "Python"),
+    (3, "statistics"), (3, "regression"), (3, "probability"),
+    (4, "machine learning"), (4, "regression"), (4, "decision trees"),
+    (4, "libsvm"), (5, "Python"), (5, "R"), (5, "Java"), (5, "C++"),
+    (5, "Haskell"), (5, "programming languages"), (6, "statistics"),
+    (6, "probability"), (6, "mathematics"), (6, "theory"),
+    (7, "machine learning"), (7, "scikit-learn"), (7, "Mahout"),
+    (7, "neural networks"), (8, "neural networks"), (8, "deep learning"),
+    (8, "Big Data"), (8, "artificial intelligence"), (9, "Hadoop"),
+    (9, "Java"), (9, "MapReduce"), (9, "Big Data")
+]
+For example, Hero (id 0) has no friends in common with Klein (id 9), but they share interests in Java and big data.
+
+It’s easy to build a function that finds users with a certain interest:
+
+def data_scientists_who_like(target_interest):
+    """Find the ids of all users who like the target interest."""
+    return [user_id
+            for user_id, user_interest in interests
+            if user_interest == target_interest]
+This works, but it has to examine the whole list of interests for every search. If we have a lot of users and interests (or if we just want to do a lot of searches), we’re probably better off building an index from interests to users:
+
+from collections import defaultdict
+
+# Keys are interests, values are lists of user_ids with that interest
+user_ids_by_interest = defaultdict(list)
+
+for user_id, interest in interests:
+    user_ids_by_interest[interest].append(user_id)
+And another from users to interests:
+
+# Keys are user_ids, values are lists of interests for that user_id.
+interests_by_user_id = defaultdict(list)
+
+for user_id, interest in interests:
+    interests_by_user_id[user_id].append(interest)
+Now it’s easy to find who has the most interests in common with a given user:
+
+Iterate over the user’s interests.
+
+For each interest, iterate over the other users with that interest.
+
+Keep count of how many times we see each other user.
+
+In code:
+
+def most_common_interests_with(user):
+    return Counter(
+        interested_user_id
+        for interest in interests_by_user_id[user["id"]]
+        for interested_user_id in user_ids_by_interest[interest]
+        if interested_user_id != user["id"]
+    )
+We could then use this to build a richer “Data Scientists You May Know” feature based on a combination of mutual friends and mutual interests. We’ll explore these kinds of applications in Chapter 23.
+
+Salaries and Experience
+Right as you’re about to head to lunch, the VP of Public Relations asks if you can provide some fun facts about how much data scientists earn. Salary data is of course sensitive, but he manages to provide you an anonymous dataset containing each user’s salary (in dollars) and tenure as a data scientist (in years):
+
+salaries_and_tenures = [(83000, 8.7), (88000, 8.1),
+                        (48000, 0.7), (76000, 6),
+                        (69000, 6.5), (76000, 7.5),
+                        (60000, 2.5), (83000, 10),
+                        (48000, 1.9), (63000, 4.2)]
+The natural first step is to plot the data (which we’ll see how to do in Chapter 3). You can see the results in Figure 1-3.
+
+Salary by Years Experience.
+Figure 1-3. Salary by years of experience
+It seems clear that people with more experience tend to earn more. How can you turn this into a fun fact? Your first idea is to look at the average salary for each tenure:
+
+# Keys are years, values are lists of the salaries for each tenure.
+salary_by_tenure = defaultdict(list)
+
+for salary, tenure in salaries_and_tenures:
+    salary_by_tenure[tenure].append(salary)
+
+# Keys are years, each value is average salary for that tenure.
+average_salary_by_tenure = {
+    tenure: sum(salaries) / len(salaries)
+    for tenure, salaries in salary_by_tenure.items()
+}
+This turns out to be not particularly useful, as none of the users have the same tenure, which means we’re just reporting the individual users’ salaries:
+
+{0.7: 48000.0,
+ 1.9: 48000.0,
+ 2.5: 60000.0,
+ 4.2: 63000.0,
+ 6: 76000.0,
+ 6.5: 69000.0,
+ 7.5: 76000.0,
+ 8.1: 88000.0,
+ 8.7: 83000.0,
+ 10: 83000.0}
+It might be more helpful to bucket the tenures:
+
+def tenure_bucket(tenure):
+    if tenure < 2:
+        return "less than two"
+    elif tenure < 5:
+        return "between two and five"
+    else:
+        return "more than five"
+Then we can group together the salaries corresponding to each bucket:
+
+# Keys are tenure buckets, values are lists of salaries for that bucket.
+salary_by_tenure_bucket = defaultdict(list)
+
+for salary, tenure in salaries_and_tenures:
+    bucket = tenure_bucket(tenure)
+    salary_by_tenure_bucket[bucket].append(salary)
+And finally compute the average salary for each group:
+
+# Keys are tenure buckets, values are average salary for that bucket.
+average_salary_by_bucket = {
+  tenure_bucket: sum(salaries) / len(salaries)
+  for tenure_bucket, salaries in salary_by_tenure_bucket.items()
+}
+Which is more interesting:
+
+{'between two and five': 61500.0,
+ 'less than two': 48000.0,
+ 'more than five': 79166.66666666667}
+And you have your soundbite: “Data scientists with more than five years’ experience earn 65% more than data scientists with little or no experience!”
+
+But we chose the buckets in a pretty arbitrary way. What we’d really like is to make some statement about the salary effect—on average—of having an additional year of experience. In addition to making for a snappier fun fact, this allows us to make predictions about salaries that we don’t know. We’ll explore this idea in Chapter 14.
+
+Paid Accounts
+When you get back to your desk, the VP of Revenue is waiting for you. She wants to better understand which users pay for accounts and which don’t. (She knows their names, but that’s not particularly actionable information.)
+
+You notice that there seems to be a correspondence between years of experience and paid accounts:
+
+0.7  paid
+1.9  unpaid
+2.5  paid
+4.2  unpaid
+6.0  unpaid
+6.5  unpaid
+7.5  unpaid
+8.1  unpaid
+8.7  paid
+10.0 paid
+Users with very few and very many years of experience tend to pay; users with average amounts of experience don’t. Accordingly, if you wanted to create a model—though this is definitely not enough data to base a model on—you might try to predict “paid” for users with very few and very many years of experience, and “unpaid” for users with middling amounts of experience:
+
+def predict_paid_or_unpaid(years_experience):
+  if years_experience < 3.0:
+    return "paid"
+  elif years_experience < 8.5:
+    return "unpaid"
+  else:
+    return "paid"
+Of course, we totally eyeballed the cutoffs.
+
+With more data (and more mathematics), we could build a model predicting the likelihood that a user would pay based on his years of experience. We’ll investigate this sort of problem in Chapter 16.
+
+Topics of Interest
+As you’re wrapping up your first day, the VP of Content Strategy asks you for data about what topics users are most interested in, so that she can plan out her blog calendar accordingly. You already have the raw data from the friend-suggester project:
+
+interests = [
+    (0, "Hadoop"), (0, "Big Data"), (0, "HBase"), (0, "Java"),
+    (0, "Spark"), (0, "Storm"), (0, "Cassandra"),
+    (1, "NoSQL"), (1, "MongoDB"), (1, "Cassandra"), (1, "HBase"),
+    (1, "Postgres"), (2, "Python"), (2, "scikit-learn"), (2, "scipy"),
+    (2, "numpy"), (2, "statsmodels"), (2, "pandas"), (3, "R"), (3, "Python"),
+    (3, "statistics"), (3, "regression"), (3, "probability"),
+    (4, "machine learning"), (4, "regression"), (4, "decision trees"),
+    (4, "libsvm"), (5, "Python"), (5, "R"), (5, "Java"), (5, "C++"),
+    (5, "Haskell"), (5, "programming languages"), (6, "statistics"),
+    (6, "probability"), (6, "mathematics"), (6, "theory"),
+    (7, "machine learning"), (7, "scikit-learn"), (7, "Mahout"),
+    (7, "neural networks"), (8, "neural networks"), (8, "deep learning"),
+    (8, "Big Data"), (8, "artificial intelligence"), (9, "Hadoop"),
+    (9, "Java"), (9, "MapReduce"), (9, "Big Data")
+]
+One simple (if not particularly exciting) way to find the most popular interests is to count the words:
+
+Lowercase each interest (since different users may or may not capitalize their interests).
+
+Split it into words.
+
+Count the results.
+
+In code:
+
+words_and_counts = Counter(word
+                           for user, interest in interests
+                           for word in interest.lower().split())
+This makes it easy to list out the words that occur more than once:
+
+for word, count in words_and_counts.most_common():
+    if count > 1:
+        print(word, count)
+which gives the results you’d expect (unless you expect “scikit-learn” to get split into two words, in which case it doesn’t give the results you expect):
+
+learning 3
+java 3
+python 3
+big 3
+data 3
+hbase 2
+regression 2
+cassandra 2
+statistics 2
+probability 2
+hadoop 2
+networks 2
+machine 2
+neural 2
+scikit-learn 2
+r 2
+We’ll look at more sophisticated ways to extract topics from data in Chapter 21.
+
+Onward
+It’s been a successful first day! Exhausted, you slip out of the building before anyone can ask you for anything else. Get a good night’s rest, because tomorrow is new employee orientation. (Yes, you went through a full day of work before new employee orientation. Take it up with HR.)
